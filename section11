@@ -1,0 +1,18 @@
+
+Upgrade:
+
+azcloud@Azure:~$ az aks get-upgrades --resource-group mykubrg --name myakscluster --output table
+Name     ResourceGroup    MasterVersion    Upgrades
+-------  ---------------  ---------------  --------------
+default  mykubrg          1.15.11          1.16.8, 1.16.9
+
+az aks upgrade --resource-group mykubrg --name myakscluster --kubernetes-version 1.16.8
+
+verify version:-
+az aks get-upgrades --resource-group mykubrg --name myakscluster --output table
+
+azcloud@Azure:~$ az aks get-upgrades --resource-group mykubrg --name myakscluster --output table
+Name     ResourceGroup    MasterVersion    Upgrades
+-------  ---------------  ---------------  ----------------------------------------
+default  mykubrg          1.16.8           1.16.9, 1.17.4(preview), 1.17.5(preview)
+azcloud@Azure:~$
