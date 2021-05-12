@@ -1,0 +1,9 @@
+Access the Kubernetes WebUI in Azure Kubernetes Service (AKS)
+
+kubectl create clusterrolebinding kubernetes-dashboard --clusterrole=cluster-admin --serviceaccount=kube-system:kubernetes-dashboard
+
+az aks browse --resource-group mykubrg --name myakscluster
+
+ref:https://docs.microsoft.com/en-us/azure/aks/kubernetes-dashboard
+
+
