@@ -1,0 +1,8 @@
+Delete the cluster
+
+To avoid Azure charges, you should clean up unneeded resources. When the cluster is no longer needed, use the az group delete command to remove the resource group, container service, and all related resources.
+Azure CLI
+
+az group delete --name <reosurcegroup> --yes --no-wait
+
+
