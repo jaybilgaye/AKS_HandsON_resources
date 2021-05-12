@@ -1,0 +1,53 @@
+015_Persistent Volumes using static volumes (Az Disks)
+======================================================
+
+Create Azure Disk:
+
+# NOTE: The disk must reside in the node group
+# get the nodegroup rg name
+
+
+NODE_GROUP=$(az aks show --resource-group myResourceGroup --name myAKSCluster --query nodeResourceGroup -o tsv)
+AKS_CLUSTER=clus1
+
+# create an azure disk
+az disk create --resource-group $NODE_GROUP --name myAKSDisk --size-gb 10 --query id --output tsv
+
+
+# Get the resource group name of nodepool
+
+POOL_GROUP=$(az aks show --resource-group mykubrg --name myakscluster --query nodeResourceGroup -o tsv)
+
+# create an azure disk
+az disk create --resource-group $POOL_GROUP --name myaksdisk2 --size-gb 10 --query id --output tsv
+
+
+kubectl run volumepod2 --image=nginx --restart=Never -o yaml --dry-run > diskpod2.yaml
+
+/subscriptions/6407f1db-4190-4575-9094-05579a9f752c/resourceGroups/MC_mykubrg_myakscluster_eastus/providers/Microsoft.Compute/disks/myaksdisk2
+
+
+Add:
+
+volumeMounts:
+      - name: azure
+        mountPath: /mnt/azure
+  volumes:
+      - name: azure
+        azureDisk:
+          kind: Managed
+          diskName: myAKSDisk
+          diskURI: <XYZ>
+
+
+kubectl apply -f diskpod.yaml
+
+
+
+kubectl exec -it volumepod2 sh
+
+mkdir /tmp/volume1
+
+echo "My az disk pod" > /tmp/file1.txt
+
+
