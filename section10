@@ -1,4 +1,4 @@
-015_Persistent Volumes using static volumes (Az Disks)
+1. Persistent Volumes using static volumes (Az Disks)
 ======================================================
 
 Create Azure Disk:
@@ -49,5 +49,139 @@ kubectl exec -it volumepod2 sh
 mkdir /tmp/volume1
 
 echo "My az disk pod" > /tmp/file1.txt
+
+
+
+======================================================================Done===
+
+2. Persistent Volumes using static volumes (Az Files)
+=========================================================================
+
+# create storage account
+az storage account create -n myaksfelixacct -g mykubrg -l eastus --sku Standard_LRS
+
+# Export the connection string as an environment variable, this is used when creating the Azure file share
+CONNECTION_STORAGE=$(az storage account show-connection-string -n myaksfelixacct -g mykubrg -o tsv)
+
+# Create the file share
+az storage share create -n myfileshare --connection-string $CONNECTION_STORAGE
+
+# Get storage account key
+KEY=$(az storage account keys list --resource-group mykubrg --account-name myaksfelixacct --query "[0].value" -o tsv)
+
+# create a secret to store the storage account key
+kubectl create secret generic az-secret --from-literal=azurestorageaccountname=myaksfelixacct --from-literal=azurestorageaccountkey=$KEY
+
+
+clear
+# create a file named pv.yaml with the following contents:
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: share-pv
+  labels:
+    usage: share-pv
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  azureFile:
+    secretName: azure-secret
+    shareName: myfileshare
+    readOnly: false
+
+# create the persistent volume (pv)
+kubectl apply -f pv.yaml
+
+
+
+
+# create a file named mypvc.yaml with the following contents:
+
+
+
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: share-pvc
+  annotations:
+    volume.beta.kubernetes.io/storage-class: ""
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+  selector:
+    matchLabels:
+      usage: share-pv
+
+
+
+
+
+# create the persistent volume claim (PVC)
+kubectl apply -f mypvc.yaml
+
+# view the persistent volumes in order to see the bound status
+kubectl get pv
+
+# view the persistent volume claims in order to see the bound status
+kubectl get pvc
+
+# create a file named volumepod.yaml with the following contents:
+apiVersion: v1
+kind: Pod
+metadata:
+ name: volumepod
+spec:
+ containers:
+  - image: nginx
+    name: volumepod
+    volumeMounts:
+      - name: azure
+        mountPath: /usr/share/nginx/html
+ volumes:
+  - name: azure
+    persistentVolumeClaim:
+      claimName: share-pvc
+
+# create the pod with attached pvc
+kubectl apply -f volumepod.yaml
+
+
+======================================================== Done.==
+
+3. Persistent Volumes using Dynamic volumes (Storage class)
+
+# view the storage classes available in your cluster
+kubectl get sc
+
+# create a file named sc.yaml with the following contents
+
+
+
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: Projectfile
+provisioner: kubernetes.io/azure-file
+mountOptions:
+  - dir_mode=0777
+  - file_mode=0777
+  - uid=0
+  - gid=0
+  - mfsymlinks
+  - cache=strict
+parameters:
+  skuName: Standard_LRS
+
+# create the storage class
+kubectl apply -f sc.yaml
+
+
+
 
 
